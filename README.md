@@ -24,6 +24,15 @@ Your final app should:
 
 ## Getting started
 
+## Smarter Scheduling
+
+Recent scheduling upgrades include:
+
+- Sorting tasks by due date and time for a cleaner daily plan
+- Filtering tasks by pet and completion status
+- Auto-creating the next occurrence for recurring tasks (daily/weekly/monthly)
+- Lightweight conflict warnings for tasks that share the same scheduled slot
+
 ### Setup
 
 ```bash

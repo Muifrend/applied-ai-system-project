@@ -41,10 +41,14 @@ I consulted with Copilot on my initial design and gave it the readme, it updated
 - What constraints does your scheduler consider (for example: time, priority, preferences)?
 - How did you decide which constraints mattered most?
 
+
+
 **b. Tradeoffs**
 
 - Describe one tradeoff your scheduler makes.
 - Why is that tradeoff reasonable for this scenario?
+
+So some calendar events will overlap and not be flagged since they will only be flagged when they are happening at exactly the same time. This helps with simplifying the logic and also is not that big of a drawback when the purpose is to help with scheduling and not optimize on this facet.
 
 ---
 
