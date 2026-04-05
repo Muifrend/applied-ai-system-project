@@ -32,12 +32,38 @@ def test_sort_by_time_orders_hhmm_values() -> None:
     owner.add_pet(pet)
     scheduler = Scheduler(owner=owner)
 
-    pet.add_task(Task(description="Second", time="09:30", frequency="daily"))
-    pet.add_task(Task(description="First", time="07:00", frequency="daily"))
+    pet.add_task(
+        Task(
+            description="Tomorrow first",
+            time="07:00",
+            frequency="daily",
+            due_date=date(2026, 4, 6),
+        )
+    )
+    pet.add_task(
+        Task(
+            description="Today second",
+            time="09:30",
+            frequency="daily",
+            due_date=date(2026, 4, 5),
+        )
+    )
+    pet.add_task(
+        Task(
+            description="Today first",
+            time="07:00",
+            frequency="daily",
+            due_date=date(2026, 4, 5),
+        )
+    )
 
     ordered = scheduler.sort_by_time(scheduler.retrieve_all_tasks(include_completed=False))
 
-    assert [task.description for task in ordered] == ["First", "Second"]
+    assert [task.description for task in ordered] == [
+        "Today first",
+        "Today second",
+        "Tomorrow first",
+    ]
 
 
 def test_filter_tasks_by_pet_and_completion_status() -> None:
@@ -81,6 +107,8 @@ def test_mark_task_complete_adds_next_occurrence_for_recurring_task() -> None:
     assert len(pet.tasks) == 2
     next_task = pet.tasks[1]
     assert next_task.description == "Morning walk"
+    assert next_task.time == "07:00"
+    assert next_task.frequency == "daily"
     assert next_task.is_completed is False
     assert next_task.due_date == date(2026, 4, 6)
 
@@ -100,5 +128,6 @@ def test_detect_conflicts_returns_warning_instead_of_error() -> None:
 
     assert len(warnings) == 1
     assert "Conflict at" in warnings[0]
+    assert "08:00" in warnings[0]
     assert "Medication" in warnings[0]
     assert "Breakfast" in warnings[0]

@@ -50,3 +50,24 @@ pip install -r requirements.txt
 5. Add tests to verify key behaviors.
 6. Connect your logic to the Streamlit UI in `app.py`.
 7. Refine UML so it matches what you actually built.
+
+## Testing PawPal+
+
+Run the full test suite from the project root:
+
+```bash
+python -m pytest
+```
+
+Current automated tests cover the core scheduler behaviors, including:
+
+- Marking tasks complete and updating completion status
+- Adding tasks to pets and validating task-list growth
+- Chronological sorting by due date and time
+- Filtering tasks by pet name and completion state
+- Daily recurrence creation when a recurring task is completed
+- Duplicate time-slot conflict detection with warning messages
+
+Confidence Level: 4/5 stars
+
+Rationale: The current suite passes and validates the most important scheduling paths, especially sorting, recurrence, and conflict warnings. Reliability is high for implemented core logic, with room to improve confidence further by adding more edge-case and UI integration tests.
