@@ -2,6 +2,11 @@
 
 ## 1. System Design
 
+The user should be able to:
+- Enter basic owner and pet information.
+- Add and edit pet care tasks, including at least duration and priority.
+- Generate and view a daily care plan based on constraints and priorities.
+
 **a. Initial design**
 
 - Briefly describe your initial UML design.
