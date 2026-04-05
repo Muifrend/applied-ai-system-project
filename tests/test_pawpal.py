@@ -66,6 +66,21 @@ def test_sort_by_time_orders_hhmm_values() -> None:
     ]
 
 
+def test_sort_by_time_pushes_invalid_times_to_end_of_same_day() -> None:
+    owner = Owner(name="Jordan")
+    pet = Pet(name="Mochi", animal="dog", age=4)
+    owner.add_pet(pet)
+    scheduler = Scheduler(owner=owner)
+
+    pet.add_task(Task(description="Invalid", time="sometime", frequency="daily", due_date=date(2026, 4, 5)))
+    pet.add_task(Task(description="Early", time="07:00", frequency="daily", due_date=date(2026, 4, 5)))
+    pet.add_task(Task(description="Late", time="18:30", frequency="daily", due_date=date(2026, 4, 5)))
+
+    ordered = scheduler.sort_by_time(scheduler.retrieve_all_tasks(include_completed=False))
+
+    assert [task.description for task in ordered] == ["Early", "Late", "Invalid"]
+
+
 def test_filter_tasks_by_pet_and_completion_status() -> None:
     owner = Owner(name="Jordan")
     dog = Pet(name="Mochi", animal="dog", age=4)
@@ -113,6 +128,45 @@ def test_mark_task_complete_adds_next_occurrence_for_recurring_task() -> None:
     assert next_task.due_date == date(2026, 4, 6)
 
 
+def test_mark_task_complete_targets_exact_due_date_and_skips_completed_matches() -> None:
+    owner = Owner(name="Jordan")
+    pet = Pet(name="Mochi", animal="dog", age=4)
+    owner.add_pet(pet)
+    scheduler = Scheduler(owner=owner)
+
+    completed_old = Task(
+        description="Morning walk",
+        time="07:00",
+        frequency="daily",
+        due_date=date(2026, 4, 5),
+        is_completed=True,
+    )
+    current = Task(
+        description="Morning walk",
+        time="07:00",
+        frequency="daily",
+        due_date=date(2026, 4, 6),
+    )
+    pet.add_task(completed_old)
+    pet.add_task(current)
+
+    result = scheduler.mark_task_complete(
+        "Mochi",
+        "Morning walk",
+        "07:00",
+        task_due_date=date(2026, 4, 6),
+    )
+
+    assert result is True
+    assert completed_old.is_completed is True
+    assert current.is_completed is True
+    assert [task.due_date for task in pet.tasks] == [
+        date(2026, 4, 5),
+        date(2026, 4, 6),
+        date(2026, 4, 7),
+    ]
+
+
 def test_detect_conflicts_returns_warning_instead_of_error() -> None:
     owner = Owner(name="Jordan")
     dog = Pet(name="Mochi", animal="dog", age=4)
@@ -131,3 +185,32 @@ def test_detect_conflicts_returns_warning_instead_of_error() -> None:
     assert "08:00" in warnings[0]
     assert "Medication" in warnings[0]
     assert "Breakfast" in warnings[0]
+
+
+def test_organize_tasks_uses_deterministic_tiebreakers() -> None:
+    owner = Owner(name="Jordan")
+    pet = Pet(name="Mochi", animal="dog", age=4)
+    owner.add_pet(pet)
+    scheduler = Scheduler(owner=owner)
+
+    pet.add_task(Task(description="Zebra", time="08:00", frequency="daily", due_date=date(2026, 4, 5)))
+    pet.add_task(Task(description="Alpha", time="08:00", frequency="daily", due_date=date(2026, 4, 5)))
+
+    organized = scheduler.organize_tasks(include_completed=False)
+
+    assert [task.description for task in organized] == ["Alpha", "Zebra"]
+
+
+def test_owner_and_scheduler_aggregate_tasks_across_pets() -> None:
+    owner = Owner(name="Jordan")
+    dog = Pet(name="Mochi", animal="dog", age=4)
+    cat = Pet(name="Pixel", animal="cat", age=2)
+    owner.add_pet(dog)
+    owner.add_pet(cat)
+    scheduler = Scheduler(owner=owner)
+
+    dog.add_task(Task(description="Walk", time="07:00", frequency="daily"))
+    cat.add_task(Task(description="Feed", time="08:00", frequency="daily"))
+
+    assert [task.description for task in owner.get_all_tasks(include_completed=False)] == ["Walk", "Feed"]
+    assert [task.description for task in scheduler.retrieve_all_tasks(include_completed=False)] == ["Walk", "Feed"]

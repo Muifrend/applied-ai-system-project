@@ -38,6 +38,18 @@ def _next_due_date(current_due_date: date, frequency: str) -> date | None:
 	return None
 
 
+def _organized_task_key(task: Task) -> tuple[bool, date, int, int, str, str]:
+	"""Shared deterministic ordering for organized task views."""
+	return (
+		task.is_completed,
+		task.due_date,
+		_frequency_rank(task.frequency),
+		_minutes_from_hhmm(task.time),
+		task.description.lower(),
+		task.time,
+	)
+
+
 @dataclass
 class Task:
 	"""Represents a single activity for pet care."""
@@ -157,36 +169,48 @@ class Scheduler:
 	def organize_tasks(self, include_completed: bool = False) -> list[Task]:
 		"""Return tasks ordered by completion state, frequency, then time."""
 		tasks = self.retrieve_all_tasks(include_completed=include_completed)
-		return sorted(
-			tasks,
-			key=lambda task: (
-				task.is_completed,
-				task.due_date,
-				_frequency_rank(task.frequency),
-				_minutes_from_hhmm(task.time),
-			),
-		)
+		return sorted(tasks, key=_organized_task_key)
 
-	def mark_task_complete(self, pet_name: str, description: str, task_time: str | None = None) -> bool:
+	def mark_task_complete(
+		self,
+		pet_name: str,
+		description: str,
+		task_time: str | None = None,
+		task_due_date: date | None = None,
+	) -> bool:
 		"""Mark matching task complete and auto-create next recurring occurrence."""
 		for pet in self.owner.pets:
 			if pet.name.lower() != pet_name.lower():
 				continue
-			for task in pet.tasks:
-				if task.description != description:
-					continue
-				if task_time is not None and task.time != task_time:
-					continue
-				task.mark_complete()
-				next_task = task.build_next_occurrence()
-				if next_task is not None:
-					pet.add_task(next_task)
-				return True
+			candidates = [
+				task
+				for task in pet.tasks
+				if not task.is_completed
+				and task.description == description
+				and (task_time is None or task.time == task_time)
+				and (task_due_date is None or task.due_date == task_due_date)
+			]
+			if not candidates:
+				continue
+
+			task_to_complete = min(
+				candidates,
+				key=lambda task: (
+					task.due_date,
+					_minutes_from_hhmm(task.time),
+					_frequency_rank(task.frequency),
+					task.description.lower(),
+				),
+			)
+			task_to_complete.mark_complete()
+			next_task = task_to_complete.build_next_occurrence()
+			if next_task is not None:
+				pet.add_task(next_task)
+			return True
 		return False
 
 	def detect_conflicts(self, pet_name: str | None = None, include_completed: bool = False) -> list[str]:
 		"""Detect exact slot conflicts and return warnings without raising errors."""
-		tasks = self.filter_tasks(pet_name=pet_name, include_completed=include_completed)
 		slot_map: dict[tuple[date, str], list[tuple[str, Task]]] = {}
 		for pet in self.owner.pets:
 			if pet_name is not None and pet.name.lower() != pet_name.lower():
@@ -207,5 +231,4 @@ class Scheduler:
 				f"Conflict at {due_date.isoformat()} {task_time} -> {participants}"
 			)
 		return warnings
-
 

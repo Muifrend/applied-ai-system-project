@@ -27,18 +27,23 @@ classDiagram
         +description: str
         +time: str
         +frequency: str
+        +due_date: date
         +is_completed: bool
         +mark_complete() None
         +mark_incomplete() None
         +update(description: str|None, time: str|None, frequency: str|None) None
+        +build_next_occurrence() Task|None
     }
 
     class Scheduler {
         +owner: Owner
         +retrieve_all_tasks(include_completed: bool=True) list~Task~
         +retrieve_tasks_for_pet(pet_name: str, include_completed: bool=True) list~Task~
+        +filter_tasks(pet_name: str|None=None, include_completed: bool=True) list~Task~
+        +sort_by_time(tasks: list~Task~) list~Task~
         +organize_tasks(include_completed: bool=False) list~Task~
         +mark_task_complete(pet_name: str, description: str, task_time: str|None) bool
+        +detect_conflicts(pet_name: str|None=None, include_completed: bool=False) list~str~
     }
 
     Owner "1" o-- "0..*" Pet : aggregates
