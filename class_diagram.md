@@ -4,9 +4,11 @@
 classDiagram
     class Owner {
         +name: str
-        +available_minutes_per_day: int
         +pets: list~Pet~
         +add_pet(pet: Pet) None
+        +remove_pet(pet: Pet) bool
+        +get_all_tasks(include_completed: bool=True) list~Task~
+        +get_tasks_by_pet() dict~str, list~Task~~
     }
 
     class Pet {
@@ -14,30 +16,32 @@ classDiagram
         +animal: str
         +age: int
         +is_sick: bool
+        +tasks: list~Task~
         +set_sick(status: bool) None
+        +add_task(task: Task) None
+        +remove_task(task: Task) bool
+        +get_tasks(include_completed: bool=True) list~Task~
     }
 
     class Task {
-        +name: str
         +description: str
-        +duration_minutes: int
-        +priority: str
-        +task_type: str
-        +date: str
-        +start_time: str
+        +time: str
+        +frequency: str
+        +is_completed: bool
+        +mark_complete() None
+        +mark_incomplete() None
+        +update(description: str|None, time: str|None, frequency: str|None) None
     }
 
-    class Schedule {
-        +date: str
+    class Scheduler {
         +owner: Owner
-        +tasks: list~Task~
-        +generate(tasks: list~Task~) None
-        +add_task(task: Task) None
-        +total_minutes() int
+        +retrieve_all_tasks(include_completed: bool=True) list~Task~
+        +retrieve_tasks_for_pet(pet_name: str, include_completed: bool=True) list~Task~
+        +organize_tasks(include_completed: bool=False) list~Task~
+        +mark_task_complete(pet_name: str, description: str, task_time: str|None) bool
     }
 
     Owner "1" o-- "0..*" Pet : aggregates
-    Schedule "1" --> "1" Owner : associates with
     Pet "1" --> "0..*" Task : associates with
-    Schedule "1" o-- "0..*" Task : aggregates
+    Scheduler "1" --> "1" Owner : associates with
 ```

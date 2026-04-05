@@ -12,10 +12,25 @@ The user should be able to:
 - Briefly describe your initial UML design.
 - What classes did you include, and what responsibilities did you assign to each?
 
+I started off with Task Pet and Schedule class.
+Task
+- name
+- description
+- date
+Pet 
+- name
+- animal
+- age
+- method is_sick
+I wasn't sure about Schedules feauters. The responsibilities where divided into what is the pet in Pet and what the task is and the date in Task. I was thinking whether Schedule was supposed to aggregate the tasks. I hadn't thought about the Owner class.
+
+
 **b. Design changes**
 
 - Did your design change during implementation?
 - If yes, describe at least one change and why you made it.
+
+I consulted with Copilot on my initial design and gave it the readme, it updated the classes and added a Owner class, however, I had to cut two redundant ones (ScheduleItem, Scheduler) and simplify the rest because it added fields like a method explain to a task which didn't make sense to me, since there was already a description.
 
 ---
 
