@@ -11,7 +11,7 @@ import chromadb
 
 logger = logging.getLogger("pawpal_agent")
 
-_DEFAULT_KNOWLEDGE_DIR = Path(__file__).resolve().parent / "knowledge"
+_DEFAULT_KNOWLEDGE_DIR = Path(__file__).resolve().parent.parent / "knowledge"
 
 # Approximate chunk size in characters.  Keeping chunks short improves
 # retrieval precision without losing too much surrounding context.

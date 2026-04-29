@@ -3,7 +3,7 @@
 from pathlib import Path
 import tempfile
 
-from knowledge_base import KnowledgeBase, _chunk_text
+from src.knowledge_base import KnowledgeBase, _chunk_text
 
 
 # ---------------------------------------------------------------------------

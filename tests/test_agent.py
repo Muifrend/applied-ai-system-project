@@ -7,13 +7,13 @@ modify session state.  No live OpenAI API calls are made.
 from datetime import date
 import logging
 
-from agent import (
+from src.agent import (
     AgentResponse,
     execute_add_task,
     execute_flag_conflict_or_gap,
     execute_get_schedule,
 )
-from pawpal_system import Owner, Pet, Scheduler, Task
+from src.pawpal_system import Owner, Pet, Scheduler, Task
 
 
 # ---------------------------------------------------------------------------

@@ -20,14 +20,14 @@ from datetime import date, datetime
 
 from openai import OpenAI
 
-from knowledge_base import KnowledgeBase
-from pawpal_system import Owner, Pet, Scheduler, Task
+from src.knowledge_base import KnowledgeBase
+from src.pawpal_system import Owner, Pet, Scheduler, Task
 
 # ---------------------------------------------------------------------------
 # Logging setup — writes to pawpal.log with timestamps
 # ---------------------------------------------------------------------------
 
-_LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pawpal.log")
+_LOG_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "pawpal.log")
 
 logging.basicConfig(
     filename=_LOG_FILE,

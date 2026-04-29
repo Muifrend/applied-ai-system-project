@@ -133,4 +133,4 @@ streamlit run app.py
 
 Current app demo:
 
-![PawPal+ demo](course_images/Demo.png)
+![PawPal+ demo](assets/Demo.png)

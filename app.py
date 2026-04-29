@@ -3,9 +3,9 @@ import os
 
 import streamlit as st
 
-from agent import PawPalAgent
-from knowledge_base import KnowledgeBase
-from pawpal_system import Owner, Pet, Scheduler, Task, _frequency_rank, _minutes_from_hhmm
+from src.agent import PawPalAgent
+from src.knowledge_base import KnowledgeBase
+from src.pawpal_system import Owner, Pet, Scheduler, Task, _frequency_rank, _minutes_from_hhmm
 
 
 def load_dummy_owners() -> list[Owner]:
