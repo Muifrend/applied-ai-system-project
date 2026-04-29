@@ -47,7 +47,7 @@ logger.addHandler(_console)
 # Constants
 # ---------------------------------------------------------------------------
 
-_MODEL = "gpt-4o"
+_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o")
 _MAX_TOOL_ITERATIONS = 5
 
 # ---------------------------------------------------------------------------

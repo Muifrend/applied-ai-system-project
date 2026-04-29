@@ -104,6 +104,17 @@ def _pet_targets(owners: list[Owner]) -> list[tuple[str, str]]:
 
 st.set_page_config(page_title="PawPal+", page_icon="🐾", layout="wide")
 
+@st.cache_resource
+def get_kb() -> KnowledgeBase:
+    return KnowledgeBase()
+
+@st.cache_resource
+def get_agent(_kb: KnowledgeBase) -> PawPalAgent:
+    return PawPalAgent(knowledge_base=_kb)
+
+# The OpenAI client automatically reads OPENAI_API_KEY from os.environ, 
+# and Streamlit automatically populates os.environ from .streamlit/secrets.toml
+
 if "owners" not in st.session_state:
     st.session_state.owners = load_dummy_owners()
 if "chat_history" not in st.session_state:
@@ -111,12 +122,9 @@ if "chat_history" not in st.session_state:
 if "agent_warnings" not in st.session_state:
     st.session_state.agent_warnings = []
 if "kb" not in st.session_state:
-    st.session_state.kb = KnowledgeBase()
+    st.session_state.kb = get_kb()
 if "agent" not in st.session_state:
-    # The OpenAI client reads OPENAI_API_KEY from env or st.secrets
-    if "OPENAI_API_KEY" in st.secrets:
-        os.environ.setdefault("OPENAI_API_KEY", st.secrets["OPENAI_API_KEY"])
-    st.session_state.agent = PawPalAgent(knowledge_base=st.session_state.kb)
+    st.session_state.agent = get_agent(st.session_state.kb)
 
 owners: list[Owner] = st.session_state.owners
 owner_names = [owner.name for owner in owners]
