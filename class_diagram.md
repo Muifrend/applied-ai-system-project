@@ -49,4 +49,29 @@ classDiagram
     Owner "1" o-- "0..*" Pet : aggregates
     Pet "1" --> "0..*" Task : associates with
     Scheduler "1" --> "1" Owner : associates with
+    PawPalAgent "1" --> "1" KnowledgeBase : queries
+    PawPalAgent "1" --> "0..*" Owner : reads/writes
+
+    class KnowledgeBase {
+        -_knowledge_dir: Path
+        -_client: EphemeralClient
+        -_collection: Collection
+        +__init__(knowledge_dir: str|Path|None) None
+        +query(text: str, n_results: int=3) list~str~
+        +document_count: int
+    }
+
+    class PawPalAgent {
+        +client: OpenAI
+        +kb: KnowledgeBase
+        +run(user_message: str, owners: list, chat_history: list, agent_warnings: list) AgentResponse
+        -_execute_tool(name: str, args: dict, owners: list, agent_warnings: list) str
+        -_extract_confidence(text: str) int
+    }
+
+    class AgentResponse {
+        +text: str
+        +confidence: int
+        +tool_calls_made: list~str~
+    }
 ```

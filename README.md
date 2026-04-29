@@ -46,12 +46,34 @@ Recent scheduling upgrades include:
 - Conflict detection algorithm that groups tasks by exact (date, time) slots and returns warning messages for duplicate slots
 - Cross-pet task aggregation through Owner and Scheduler to support whole-household planning views
 
+### AI-Powered Features
+
+- **RAG Knowledge Base**: 6 pet-care markdown files (vaccination, nutrition, exercise, grooming, medication, enrichment) embedded via ChromaDB for grounded AI responses
+- **GPT-4o Agent**: Agentic AI assistant with three tools — `get_schedule`, `add_task`, `flag_conflict_or_gap` — that reads and writes the live dashboard state
+- **Natural Language Scheduling**: Users can type requests like "Schedule a flea treatment for Mochi tomorrow at 9am" and the agent handles the rest
+- **Confidence Scoring**: Every AI response includes a 1-5 confidence score displayed in the chat UI
+- **Structured Logging**: Every agent invocation, tool call, and result is logged to `pawpal.log` with timestamps
+- **Conflict Awareness**: The agent automatically checks for scheduling conflicts after adding tasks
+
+## AI Architecture
+
+The AI system has three layers:
+
+1. **Knowledge Base (RAG)** — Markdown files in `knowledge/` are chunked and embedded into ChromaDB. User queries retrieve the top-3 relevant chunks as context for the agent.
+2. **AI Agent (Agentic)** — A GPT-4o agent with function calling. It receives the user message + RAG chunks + schedule snapshot, decides which tools to call, executes them against session state, and responds.
+3. **Chat UI** — A Streamlit chat panel alongside the dashboard. The agent's task modifications are reflected in real time.
+
 ### Setup
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+```
+
+**API Key**: Create `.streamlit/secrets.toml` with your OpenAI key:
+```toml
+OPENAI_API_KEY = "sk-..."
 ```
 
 ### Suggested workflow
@@ -84,9 +106,22 @@ Current automated tests cover the core scheduler behaviors, including:
 - Duplicate time-slot conflict detection with warning messages
 - Deterministic organize-task ordering and cross-pet aggregation
 
+AI agent and knowledge base tests (deterministic, no API calls):
+
+- get_schedule tool reads correct tasks, filters by owner and date range
+- add_task tool creates tasks in session state with validation
+- add_task detects conflicts after creation
+- Graceful error handling for unknown owners and pets
+- flag_conflict_or_gap appends warnings correctly
+- Knowledge base loads and chunks all markdown files
+- RAG queries return relevant chunks with correct result counts
+- Edge cases: empty queries, empty directories
+
+Total: 29 tests (9 scheduler + 12 agent + 8 knowledge base) — all passing.
+
 Confidence Level: 4/5 stars
 
-Rationale: The current suite passes and validates the most important scheduling paths, especially sorting, recurrence, and conflict warnings. Reliability is high for implemented core logic, with room to improve confidence further by adding more edge-case and UI integration tests.
+Rationale: The current suite passes and validates the most important scheduling paths, especially sorting, recurrence, and conflict warnings. The AI agent tools are tested deterministically without API calls. Reliability is high for implemented core logic, with room to improve confidence further by adding more edge-case and end-to-end integration tests.
 
 ## 📸 Demo
 
