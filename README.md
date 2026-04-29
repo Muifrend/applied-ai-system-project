@@ -53,6 +53,8 @@ Recent scheduling upgrades include:
 
 ## AI Architecture
 
+![System Architecture Diagram](assets/uml_final.png)
+
 The AI system has three layers:
 
 1. **Knowledge Base (RAG)** — Markdown files in `knowledge/` are chunked and embedded into ChromaDB. User queries retrieve the top-3 relevant chunks as context for the agent.
