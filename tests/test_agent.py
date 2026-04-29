@@ -191,13 +191,13 @@ def test_flag_conflict_handles_empty_message() -> None:
 
 
 # ---------------------------------------------------------------------------
-# AgentResponse confidence extraction
+# AgentResponse actionability extraction
 # ---------------------------------------------------------------------------
 
-def test_agent_response_default_confidence() -> None:
-    """Default confidence should be 3 when not specified."""
+def test_agent_response_default_actionability() -> None:
+    """Default actionability should be 3 when not specified."""
     resp = AgentResponse(text="Hello!")
-    assert resp.confidence == 3
+    assert resp.actionability == 3
 
 
 def test_tool_execution_is_logged(caplog) -> None:

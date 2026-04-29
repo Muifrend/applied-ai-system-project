@@ -158,7 +158,7 @@ class AgentResponse:
     """Container for the final agent output."""
 
     text: str
-    confidence: int = 3
+    actionability: int = 3
     tool_calls_made: list[str] = field(default_factory=list)
 
 
@@ -312,11 +312,11 @@ If the knowledge base has relevant information, reference it.
 - If you cannot fulfill a request (e.g., deleting tasks, modifying owners), \
 explain what you can do instead. Do NOT hallucinate capabilities.
 - Keep responses concise and helpful.
-- At the END of every response, output a confidence score in exactly this \
-format on its own line: [Confidence: X/5] where X is 1-5.
-  - 5 = fully confident, grounded in knowledge base and verified schedule
-  - 3 = reasonable suggestion but not fully verified
-  - 1 = unsure, recommend consulting a veterinarian
+- At the END of every response, output an actionability score in exactly this \
+format on its own line: [Actionability: X/5] where X is 1-5.
+  - 5 = The request is a safe, basic scheduling action fully capable of being automated.
+  - 3 = The request is informational and relies on general knowledge rather than direct system action.
+  - 1 = The request involves a medical emergency or requires a human professional; the system CANNOT safely execute this.
 
 Today's date is {today}.
 """
@@ -413,14 +413,14 @@ class PawPalAgent:
         # 4. Get the final text response
         final_text = choice.message.content or "I wasn't able to generate a response."
 
-        # 5. Extract confidence score
-        confidence = self._extract_confidence(final_text)
+        # 5. Extract actionability score and clean text
+        actionability, cleaned_text = self._extract_actionability(final_text)
 
-        logger.info("Agent response (confidence=%d): %s", confidence, final_text[:200])
+        logger.info("Agent response (actionability=%d): %s", actionability, cleaned_text[:200])
 
         return AgentResponse(
-            text=final_text,
-            confidence=confidence,
+            text=cleaned_text,
+            actionability=actionability,
             tool_calls_made=tool_calls_made,
         )
 
@@ -445,9 +445,11 @@ class PawPalAgent:
         return f"Error: Unknown tool '{name}'."
 
     @staticmethod
-    def _extract_confidence(text: str) -> int:
-        """Parse ``[Confidence: X/5]`` from the response text."""
-        match = re.search(r"\[Confidence:\s*(\d)/5\]", text)
+    def _extract_actionability(text: str) -> tuple[int, str]:
+        """Parse and remove ``[Actionability: X/5]`` from the response text."""
+        match = re.search(r"\[Actionability:\s*(\d)/5\]\n?", text, re.IGNORECASE)
         if match:
-            return max(1, min(5, int(match.group(1))))
-        return 3  # default if agent didn't include it
+            score = max(1, min(5, int(match.group(1))))
+            clean_text = text[:match.start()] + text[match.end():]
+            return score, clean_text.strip()
+        return 3, text.strip()  # default if agent didn't include it

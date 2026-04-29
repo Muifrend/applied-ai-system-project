@@ -342,10 +342,10 @@ with chat_col:
         for msg in st.session_state.chat_history:
             with st.chat_message(msg["role"]):
                 st.markdown(msg["content"])
-                if msg["role"] == "assistant" and "confidence" in msg:
-                    conf = msg["confidence"]
-                    stars = "⭐" * conf + "☆" * (5 - conf)
-                    st.caption(f"AI confidence: {stars} ({conf}/5)")
+                if msg["role"] == "assistant" and "actionability" in msg:
+                    act = msg["actionability"]
+                    stars = "⚡" * act + "⚪" * (5 - act)
+                    st.caption(f"System Actionability: {stars} ({act}/5)")
                 if msg["role"] == "assistant" and msg.get("tool_calls_made"):
                     st.caption(f"🔧 Tools used: {', '.join(msg['tool_calls_made'])}")
 
@@ -372,14 +372,14 @@ with chat_col:
                 st.session_state.chat_history.append({
                     "role": "assistant",
                     "content": result.text,
-                    "confidence": result.confidence,
+                    "actionability": result.actionability,
                     "tool_calls_made": result.tool_calls_made,
                 })
             except Exception as e:
                 st.session_state.chat_history.append({
                     "role": "assistant",
                     "content": f"⚠️ Sorry, I encountered an error: {e}",
-                    "confidence": 1,
+                    "actionability": 1,
                     "tool_calls_made": [],
                 })
 
