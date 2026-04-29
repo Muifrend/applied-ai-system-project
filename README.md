@@ -51,15 +51,19 @@ Recent scheduling upgrades include:
 - **Structured Logging**: Every agent invocation, tool call, and result is logged to `pawpal.log` with timestamps
 - **Conflict Awareness**: The agent automatically checks for scheduling conflicts after adding tasks
 
-## AI Architecture
+## AI Workflow & Architecture
 
-![System Architecture Diagram](assets/uml_final.png)
+![AI Architecture](assets/AI_architecture.png)
 
 The AI system has three layers:
 
 1. **Knowledge Base (RAG)** — Markdown files in `knowledge/` are chunked and embedded into ChromaDB. User queries retrieve the top-3 relevant chunks as context for the agent.
 2. **AI Agent (Agentic)** — A GPT-4o agent with function calling. It receives the user message + RAG chunks + schedule snapshot, decides which tools to call, executes them against session state, and responds.
 3. **Chat UI** — A Streamlit chat panel alongside the dashboard. The agent's task modifications are reflected in real time.
+
+## System Class Diagram
+
+![PawPal+ Class Diagram](assets/uml_final.png)
 
 ### Setup
 
