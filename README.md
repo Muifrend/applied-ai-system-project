@@ -1,8 +1,8 @@
 # PawPal+ AI: Intelligent Pet-Care Assistant
 
-| Video Walkthrough | Current App Frontend |
-| :--- | :--- |
-| [https://www.loom.com/share/f3b5b5c971304bd8bdff330d8e2d24d7]() | ![PawPal+ demo](assets/Demo.png) |
+![PawPal+ demo](assets/Demo.png)
+
+**Video Walkthrough**: [https://www.loom.com/share/f3b5b5c971304bd8bdff330d8e2d24d7](https://www.loom.com/share/f3b5b5c971304bd8bdff330d8e2d24d7)
 
 ## About The Original Project (Modules 1-3)
 The original project, **PawPal+**, was a Streamlit app designed to help a pet owner plan care tasks for their pet. It allowed users to track tasks (walks, feeding, meds, grooming) and produced a daily schedule based on constraints and priorities using a legacy backend scheduler.
