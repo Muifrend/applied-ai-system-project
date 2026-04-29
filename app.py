@@ -1,7 +1,10 @@
 from datetime import date, datetime
+import os
 
 import streamlit as st
 
+from agent import PawPalAgent
+from knowledge_base import KnowledgeBase
 from pawpal_system import Owner, Pet, Scheduler, Task, _frequency_rank, _minutes_from_hhmm
 
 
@@ -103,6 +106,17 @@ st.set_page_config(page_title="PawPal+", page_icon="🐾", layout="wide")
 
 if "owners" not in st.session_state:
     st.session_state.owners = load_dummy_owners()
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+if "agent_warnings" not in st.session_state:
+    st.session_state.agent_warnings = []
+if "kb" not in st.session_state:
+    st.session_state.kb = KnowledgeBase()
+if "agent" not in st.session_state:
+    # The OpenAI client reads OPENAI_API_KEY from env or st.secrets
+    if "OPENAI_API_KEY" in st.secrets:
+        os.environ.setdefault("OPENAI_API_KEY", st.secrets["OPENAI_API_KEY"])
+    st.session_state.agent = PawPalAgent(knowledge_base=st.session_state.kb)
 
 owners: list[Owner] = st.session_state.owners
 owner_names = [owner.name for owner in owners]
@@ -205,97 +219,161 @@ with st.sidebar.expander("Schedule Task", expanded=True):
                         st.rerun()
 
 # ------------------------------------------------------------------------------
-# MAIN DASHBOARD
+# MAIN LAYOUT — Dashboard (left) + AI Chat (right)
 # ------------------------------------------------------------------------------
-st.title("Today's Schedule")
-selected_owner_name = st.selectbox(
-    "Owner filter",
-    options=owner_filter_options,
-    index=(
-        owner_filter_options.index(st.session_state.selected_owner_name)
-        if st.session_state.selected_owner_name in owner_filter_options
-        else 0
-    ),
-)
-st.session_state.selected_owner_name = selected_owner_name
-view_owners = _owners_in_view(owners, selected_owner_name)
-st.caption(
-    "Showing tasks for all owners"
-    if selected_owner_name == "All"
-    else f"Showing tasks for: {selected_owner_name}"
-)
+dashboard_col, chat_col = st.columns([7, 3])
 
-show_completed = st.checkbox("Show completed tasks", value=False)
+with dashboard_col:
+    st.title("Today's Schedule")
+    selected_owner_name = st.selectbox(
+        "Owner filter",
+        options=owner_filter_options,
+        index=(
+            owner_filter_options.index(st.session_state.selected_owner_name)
+            if st.session_state.selected_owner_name in owner_filter_options
+            else 0
+        ),
+    )
+    st.session_state.selected_owner_name = selected_owner_name
+    view_owners = _owners_in_view(owners, selected_owner_name)
+    st.caption(
+        "Showing tasks for all owners"
+        if selected_owner_name == "All"
+        else f"Showing tasks for: {selected_owner_name}"
+    )
 
-pending_count = sum(len(owner.get_all_tasks(include_completed=False)) for owner in view_owners)
-pets_count = sum(len(owner.pets) for owner in view_owners)
+    show_completed = st.checkbox("Show completed tasks", value=False)
 
-col1, col2, col3 = st.columns(3)
-col1.metric("Owners Managed", len(owners))
-col2.metric("Pets Managed", pets_count)
-col3.metric("Pending Tasks", pending_count)
+    pending_count = sum(len(owner.get_all_tasks(include_completed=False)) for owner in view_owners)
+    pets_count = sum(len(owner.pets) for owner in view_owners)
 
-st.divider()
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Owners Managed", len(owners))
+    col2.metric("Pets Managed", pets_count)
+    col3.metric("Pending Tasks", pending_count)
 
-tasks = _tasks_with_owner_and_pet(view_owners, include_completed=show_completed)
+    st.divider()
 
-if not tasks:
-    st.info("No upcoming tasks! Relax with your furry friends.")
-else:
-    for row_index, (owner_name, pet_name, task) in enumerate(tasks):
-        with st.container(border=True):
-            c1, c2, c3 = st.columns([1, 4, 1])
+    tasks = _tasks_with_owner_and_pet(view_owners, include_completed=show_completed)
 
-            with c1:
-                try:
-                    label_time = datetime.strptime(task.time, "%H:%M").strftime("%I:%M %p")
-                except ValueError:
-                    label_time = task.time
-                st.write(f"**{label_time}**")
+    if not tasks:
+        st.info("No upcoming tasks! Relax with your furry friends.")
+    else:
+        for row_index, (owner_name, pet_name, task) in enumerate(tasks):
+            with st.container(border=True):
+                c1, c2, c3 = st.columns([1, 4, 1])
 
-            with c2:
-                if task.is_completed:
-                    st.markdown(f"~~{owner_name} > {pet_name}: {task.description}~~")
-                else:
-                    st.markdown(f"**{owner_name} > {pet_name}**: {task.description}")
-                st.caption(f"Due {task.due_date.isoformat()} | {task.frequency}")
+                with c1:
+                    try:
+                        label_time = datetime.strptime(task.time, "%H:%M").strftime("%I:%M %p")
+                    except ValueError:
+                        label_time = task.time
+                    st.write(f"**{label_time}**")
 
-            with c3:
-                if not task.is_completed:
-                    done_key = f"done_{row_index}_{id(task)}"
-                    if st.button("Done", key=done_key):
-                        owner_for_task = _find_owner_by_name(owners, owner_name)
-                        if owner_for_task is None:
-                            st.error("Owner for this task was not found.")
-                            st.stop()
+                with c2:
+                    if task.is_completed:
+                        st.markdown(f"~~{owner_name} > {pet_name}: {task.description}~~")
+                    else:
+                        st.markdown(f"**{owner_name} > {pet_name}**: {task.description}")
+                    st.caption(f"Due {task.due_date.isoformat()} | {task.frequency}")
 
-                        owner_scheduler = Scheduler(owner=owner_for_task)
-                        was_marked = owner_scheduler.mark_task_complete(
-                            pet_name=pet_name,
-                            description=task.description,
-                            task_time=task.time,
-                            task_due_date=task.due_date,
-                        )
-                        if not was_marked:
-                            st.error("That task could not be completed. Please try again.")
-                        else:
-                            st.rerun()
-                else:
-                    st.write("✅")
+                with c3:
+                    if not task.is_completed:
+                        done_key = f"done_{row_index}_{id(task)}"
+                        if st.button("Done", key=done_key):
+                            owner_for_task = _find_owner_by_name(owners, owner_name)
+                            if owner_for_task is None:
+                                st.error("Owner for this task was not found.")
+                                st.stop()
 
-conflict_warnings: list[str] = []
-for owner in view_owners:
-    owner_scheduler = Scheduler(owner=owner)
-    for warning in owner_scheduler.detect_conflicts(include_completed=False):
-        conflict_warnings.append(f"{owner.name}: {warning}")
+                            owner_scheduler = Scheduler(owner=owner_for_task)
+                            was_marked = owner_scheduler.mark_task_complete(
+                                pet_name=pet_name,
+                                description=task.description,
+                                task_time=task.time,
+                                task_due_date=task.due_date,
+                            )
+                            if not was_marked:
+                                st.error("That task could not be completed. Please try again.")
+                            else:
+                                st.rerun()
+                    else:
+                        st.write("✅")
 
-if conflict_warnings:
-    st.markdown("### Conflict Warnings")
-    for warning in conflict_warnings:
+    conflict_warnings: list[str] = []
+    for owner in view_owners:
+        owner_scheduler = Scheduler(owner=owner)
+        for warning in owner_scheduler.detect_conflicts(include_completed=False):
+            conflict_warnings.append(f"{owner.name}: {warning}")
+
+    if conflict_warnings:
+        st.markdown("### Conflict Warnings")
+        for warning in conflict_warnings:
+            st.warning(warning)
+
+    # --------------------------------------------------------------------------
+    # DEBUG / INSPECTOR
+    # --------------------------------------------------------------------------
+    with st.expander("Debug: Raw System Data"):
+        st.write(owners)
+
+# ------------------------------------------------------------------------------
+# AI CHAT PANEL (right column)
+# ------------------------------------------------------------------------------
+with chat_col:
+    st.subheader("🤖 PawPal AI")
+    st.caption("Ask me about pet care or schedule tasks naturally.")
+
+    # Display agent warnings
+    for warning in st.session_state.agent_warnings:
         st.warning(warning)
 
-# ------------------------------------------------------------------------------
-# DEBUG / INSPECTOR
-# ------------------------------------------------------------------------------
-with st.expander("Debug: Raw System Data"):
-    st.write(owners)
+    # Chat history display
+    chat_container = st.container(height=500)
+    with chat_container:
+        for msg in st.session_state.chat_history:
+            with st.chat_message(msg["role"]):
+                st.markdown(msg["content"])
+                if msg["role"] == "assistant" and "confidence" in msg:
+                    conf = msg["confidence"]
+                    stars = "⭐" * conf + "☆" * (5 - conf)
+                    st.caption(f"AI confidence: {stars} ({conf}/5)")
+                if msg["role"] == "assistant" and msg.get("tool_calls_made"):
+                    st.caption(f"🔧 Tools used: {', '.join(msg['tool_calls_made'])}")
+
+    # Chat input
+    user_input = st.chat_input("e.g. Schedule a walk for Mochi tomorrow at 8am")
+    if user_input:
+        # Add user message to history
+        st.session_state.chat_history.append({"role": "user", "content": user_input})
+
+        # Run the agent
+        with st.spinner("PawPal AI is thinking..."):
+            agent: PawPalAgent = st.session_state.agent
+            try:
+                result = agent.run(
+                    user_message=user_input,
+                    owners=owners,
+                    chat_history=[
+                        {"role": m["role"], "content": m["content"]}
+                        for m in st.session_state.chat_history[:-1]  # exclude the just-added user msg
+                    ],
+                    agent_warnings=st.session_state.agent_warnings,
+                )
+                # Add assistant response to history
+                st.session_state.chat_history.append({
+                    "role": "assistant",
+                    "content": result.text,
+                    "confidence": result.confidence,
+                    "tool_calls_made": result.tool_calls_made,
+                })
+            except Exception as e:
+                st.session_state.chat_history.append({
+                    "role": "assistant",
+                    "content": f"⚠️ Sorry, I encountered an error: {e}",
+                    "confidence": 1,
+                    "tool_calls_made": [],
+                })
+
+        # Rerun to show updated chat + dashboard
+        st.rerun()
