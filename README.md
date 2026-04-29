@@ -1,18 +1,12 @@
-# PawPal+ (Module 2 Project)
+# PawPal+ AI: Intelligent Pet-Care Assistant
 
-You are building **PawPal+**, a Streamlit app that helps a pet owner plan care tasks for their pet.
+**Video Walkthrough**: [🔗 Insert your Loom Video Link Here]()
 
-## Scenario
+## About The Original Project (Modules 1-3)
+The original project, **PawPal+**, was a Streamlit app designed to help a pet owner plan care tasks for their pet. It allowed users to track tasks (walks, feeding, meds, grooming) and produced a daily schedule based on constraints and priorities using a legacy backend scheduler.
 
-A busy pet owner needs help staying consistent with pet care. They want an assistant that can:
-
-- Track pet care tasks (walks, feeding, meds, enrichment, grooming, etc.)
-- Consider constraints (time available, priority, owner preferences)
-- Produce a daily plan and explain why it chose that plan
-
-Your job is to design the system first (UML), then implement the logic in Python, then connect it to the Streamlit UI.
-
-## What you will build
+## What it does now (Final AI System)
+PawPal+ has been upgraded into a fully autonomous, conversational AI assistant using GPT-4o. It integrates an agentic workflow that can read, write, and manage your pet's schedule directly from the chat interface. Furthermore, it incorporates a Retrieval-Augmented Generation (RAG) system using ChromaDB to ground its advice in actual pet-care medical documentation, ensuring safe, reliable, and actionable scheduling.
 
 Your final app should:
 
